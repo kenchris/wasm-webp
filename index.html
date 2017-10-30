@@ -1,0 +1,54 @@
+<html>
+
+<head>
+  <title>WebP decoding</title>
+  <script type="text/javascript">
+    const Module = {
+      noInitialRun : true
+    };
+  </script>
+  <script type="text/javascript">
+    async function fetchAndInstantiate(url) {
+      if (window.wasmWebPToCanvas) {
+        return window.wasmWebPToCanvas;
+      }
+
+      const response = await fetch(url);
+      const bytes = await response.arrayBuffer();
+
+      // Emscripted specifics below:
+      Module.wasmBinary = bytes;
+      const script = document.createElement('script');
+      script.src = "webp_wasm.js";
+
+      return new Promise(resolve => {
+        script.onload = () => {
+          window.wasmWebPToCanvas = Module.cwrap('WebpToSDL', 'number', ['array', 'number']);
+          resolve(window.wasmWebPToCanvas);
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    async function loadWebPImage(url) {
+      const p1 = fetchAndInstantiate('webp_wasm.wasm');
+      const p2 = fetch(url).then(response => response.arrayBuffer());
+
+      let [ fn, buffer ] = await Promise.all([p1, p2]);
+
+      const offscreenCanvas = document.getElementById('offscreenCanvas'); //document.createElement('canvas');
+      offscreenCanvas.width = 640;
+      offscreenCanvas.height = 640;
+
+      Module.canvas = offscreenCanvas;
+      offscreenCanvas.getContext('2d').clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+      fn(buffer, buffer.length);
+    }
+  </script>
+</head>
+
+<body>
+  <input type="button" name="./test1.webp" onclick="loadWebPImage(this.name)" value="Load image"></input>
+  <canvas id="offscreenCanvas"></canvas>
+</body>
+</html>
