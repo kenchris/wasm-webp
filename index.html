@@ -3,52 +3,53 @@
 <head>
   <title>WebP decoding</title>
   <script type="text/javascript">
-    const Module = {
-      noInitialRun : true
-    };
-  </script>
-  <script type="text/javascript">
+    var Module = {};
+
     async function fetchAndInstantiate(url) {
-      if (window.wasmWebPToCanvas) {
-        return window.wasmWebPToCanvas;
-      }
-
       const response = await fetch(url);
-      const bytes = await response.arrayBuffer();
-
-      // Emscripted specifics below:
-      Module.wasmBinary = bytes;
-      const script = document.createElement('script');
-      script.src = "webp_wasm.js";
+      // Emscripten looks for Module.wasmBinary
+      Module.wasmBinary = await response.arrayBuffer();
 
       return new Promise(resolve => {
+        const script = document.createElement('script');
+        script.src = "webp_wasm.js";
         script.onload = () => {
-          window.wasmWebPToCanvas = Module.cwrap('WebpToSDL', 'number', ['array', 'number']);
-          resolve(window.wasmWebPToCanvas);
-        };
+          // The Js boilerplate replaces Module.
+          const moduleExports = {
+            decodeWebPBufferToCanvas: Module.cwrap('WebpToSDL', 'number', ['array', 'number'])
+          }
+          resolve(moduleExports);
+        }
         document.body.appendChild(script);
       });
     }
 
+    const waitPromise = (async () => {
+      Module.exports = await fetchAndInstantiate('webp_wasm.wasm');
+    })();
+
+    loadWebPImage('test1.webp');
+
     async function loadWebPImage(url) {
-      const p1 = fetchAndInstantiate('webp_wasm.wasm');
-      const p2 = fetch(url).then(response => response.arrayBuffer());
+      await waitPromise;
 
-      let [ fn, buffer ] = await Promise.all([p1, p2]);
+      const buffer = new Uint8Array(await fetch(url).then(response => response.arrayBuffer()));
 
-      const offscreenCanvas = document.getElementById('offscreenCanvas'); //document.createElement('canvas');
-      offscreenCanvas.width = 640;
-      offscreenCanvas.height = 640;
+      Module.canvas = document.createElement('canvas'); // offscreen.
+      Module.exports.decodeWebPBufferToCanvas(buffer, buffer.length);
 
-      Module.canvas = offscreenCanvas;
-      offscreenCanvas.getContext('2d').clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-      fn(buffer, buffer.length);
+      document.getElementById('webp').src = await Module.canvas.toDataURL();
     }
   </script>
 </head>
 
 <body>
-  <input type="button" name="./test1.webp" onclick="loadWebPImage(this.name)" value="Load image"></input>
-  <canvas id="offscreenCanvas"></canvas>
+  <input type="button" onclick="loadWebPImage('test1.webp')" value="Image 1"></input>
+  <input type="button" onclick="loadWebPImage('test2.webp')" value="Image 2"></input>
+  <input type="button" onclick="loadWebPImage('test3.webp')" value="Image 3"></input>
+  <input type="button" onclick="loadWebPImage('test4.webp')" value="Image 4"></input>
+  <input type="button" onclick="loadWebPImage('test5.webp')" value="Image 5"></input>
+  <br><br>
+  <img id="webp"></img>
 </body>
 </html>
