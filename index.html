@@ -3,53 +3,22 @@
 <head>
   <title>WebP decoding</title>
   <script type="text/javascript">
-    var Module = {};
+    const canvas = document.createElement('canvas');
+    const offscreen = canvas.transferControlToOffscreen();
+    console.log("offscreen", offscreen);
 
-    async function fetchAndInstantiate(url) {
-      const response = await fetch(url);
-      // Emscripten looks for Module.wasmBinary
-      Module.wasmBinary = await response.arrayBuffer();
-
-      return new Promise(resolve => {
-        const script = document.createElement('script');
-        script.src = "webp_wasm.js";
-        script.onload = () => {
-          // The Js boilerplate replaces Module.
-          const moduleExports = {
-            decodeWebPBufferToCanvas: Module.cwrap('WebpToSDL', 'number', ['array', 'number'])
-          }
-          resolve(moduleExports);
-        }
-        document.body.appendChild(script);
-      });
-    }
-
-    const waitPromise = (async () => {
-      Module.exports = await fetchAndInstantiate('webp_wasm.wasm');
-    })();
-
-    loadWebPImage('test1.webp');
-
-    async function loadWebPImage(url) {
-      await waitPromise;
-
-      const buffer = new Uint8Array(await fetch(url).then(response => response.arrayBuffer()));
-
-      Module.canvas = document.createElement('canvas'); // offscreen.
-      Module.exports.decodeWebPBufferToCanvas(buffer, buffer.length);
-
-      document.getElementById('webp').src = await Module.canvas.toDataURL();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => {
+        return navigator.serviceWorker.ready;
+      }).then(() => {
+        console.log("sending", offscreen);
+        navigator.serviceWorker.controller.postMessage({canvas: offscreen}, [offscreen]);
+      })
     }
   </script>
 </head>
 
 <body>
-  <input type="button" onclick="loadWebPImage('test1.webp')" value="Image 1"></input>
-  <input type="button" onclick="loadWebPImage('test2.webp')" value="Image 2"></input>
-  <input type="button" onclick="loadWebPImage('test3.webp')" value="Image 3"></input>
-  <input type="button" onclick="loadWebPImage('test4.webp')" value="Image 4"></input>
-  <input type="button" onclick="loadWebPImage('test5.webp')" value="Image 5"></input>
-  <br><br>
-  <img id="webp"></img>
+  <img src='test1.webp'></img>
 </body>
 </html>
