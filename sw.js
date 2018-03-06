@@ -6,16 +6,14 @@ function importWebP() {
   return new Promise(resolve => {
     Module.onRuntimeInitialized = _ => {
       const version = Module.cwrap('version', 'number', []);
-      const createUint8Buffer = Module.cwrap('createUint8Buffer', 'number', ['number']);
       const getInfo = Module.cwrap('getInfo', 'number', ['number', 'number']);
-      const destroy = Module.cwrap('destroy', 'void', ['number']);
       const decode = Module.cwrap('decode', 'number', ['number', 'number']);
 
       class WebPDecoder {
-        constructor(buffer, byteLength) {
-          this.ptr = createUint8Buffer(byteLength);
-          this.size = byteLength;
-          Module.HEAP8.set(buffer, this.ptr);
+        constructor(buffer) {
+          this.size = buffer.length * buffer.BYTES_PER_ELEMENT;
+          this.ptr = Module._malloc(this.size);
+          Module.HEAPU8.set(buffer, this.ptr);
         }
 
         version() {
@@ -26,13 +24,13 @@ function importWebP() {
           const ptr = getInfo(this.ptr, this.size);
           const success = !!Module.getValue(ptr, "i32");
           if (!success) {
-            destroy(ptr);
+            Module._free(ptr);
             return { width: null, height: null };
           }
           const width = Module.getValue(ptr + 4, "i32");
           const height = Module.getValue(ptr + 8, "i32");
     
-          destroy(ptr);
+          Module._free(ptr);
     
           return { width, height };
         }
@@ -43,7 +41,7 @@ function importWebP() {
           const resultPtr = decode(this.ptr, this.size);
           const resultView = new Uint8Array(Module.HEAP8.buffer, resultPtr, width * height * 4);
           const result = new Uint8Array(resultView);
-          destroy(resultPtr);
+          Module._free(resultPtr);
 
           return result;
         }

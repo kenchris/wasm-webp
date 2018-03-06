@@ -9,11 +9,6 @@ int version() {
 }
 
 EMSCRIPTEN_KEEPALIVE
-uint8_t* createUint8Buffer(size) {
-  return malloc(size * sizeof(uint8_t));
-}
-
-EMSCRIPTEN_KEEPALIVE
 int* getInfo(const uint8_t* data, size_t size) {
   int* results = (int*) malloc(3 * sizeof(int));
 
@@ -35,10 +30,4 @@ uint8_t* decode(const uint8_t* data, size_t size) {
 
   uint8_t* buffer = WebPDecodeRGBA(data, size, &width, &height);
   return buffer;
-}
-
-EMSCRIPTEN_KEEPALIVE
-void destroy(const uint8_t* data) {
-  // WebPFree just calls free() so this is fine.
-  free((void *)data);
 }
