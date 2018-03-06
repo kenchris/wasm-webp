@@ -25,4 +25,5 @@ target_include_directories(webp_wasm PRIVATE
 set_target_properties(webp_wasm PROPERTIES LINK_FLAGS
     "-s WASM=1 \
     -s EXTRA_EXPORTED_RUNTIME_METHODS='[\"cwrap\", \"getValue\"]' \
+    -s ALLOW_MEMORY_GROWTH=1 \
     -I libwebp")

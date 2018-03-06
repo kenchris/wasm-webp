@@ -3,22 +3,13 @@
 <head>
   <title>WebP decoding</title>
   <script type="text/javascript">
-    const canvas = document.createElement('canvas');
-    const offscreen = canvas.transferControlToOffscreen();
-    console.log("offscreen", offscreen);
-
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        return navigator.serviceWorker.ready;
-      }).then(() => {
-        console.log("sending", offscreen);
-        navigator.serviceWorker.controller.postMessage({canvas: offscreen}, [offscreen]);
-      })
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </head>
 
 <body>
-  <img src='test1.webp'></img>
+  <img src='test2.webp'></img>
 </body>
 </html>
