@@ -1,22 +1,16 @@
 #include <stdlib.h>
 #include "emscripten.h"
-#include "../libwebp/src/webp/encode.h"
 #include "../libwebp/src/webp/decode.h"
 
 
 EMSCRIPTEN_KEEPALIVE
 int version() {
-  return WebPGetEncoderVersion();
+  return WebPGetDecoderVersion();
 }
 
 EMSCRIPTEN_KEEPALIVE
 uint8_t* createUint8Buffer(size) {
   return malloc(size * sizeof(uint8_t));
-}
-
-EMSCRIPTEN_KEEPALIVE
-void destroyUint8Buffer(uint8_t* p) {
-  free(p);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -45,5 +39,6 @@ uint8_t* decode(const uint8_t* data, size_t size) {
 
 EMSCRIPTEN_KEEPALIVE
 void destroy(const uint8_t* data) {
-  WebPFree((void *)data);
+  // WebPFree just calls free() so this is fine.
+  free((void *)data);
 }
