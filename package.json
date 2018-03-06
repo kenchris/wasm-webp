@@ -1,0 +1,7 @@
+{
+  "name": "wasm-webp",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release && make"
+  }
+}
