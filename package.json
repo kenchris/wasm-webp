@@ -2,6 +2,10 @@
   "name": "wasm-webp",
   "version": "0.0.1",
   "scripts": {
-    "build": "cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release && make"
+    "build": "gulp compile && cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release && make"
+  },
+  "dependencies": {
+    "gulp": "^3.9.1",
+    "gulp-replace": "^0.6.1"
   }
 }

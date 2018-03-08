@@ -7,17 +7,37 @@
     const offscreen = canvas.transferControlToOffscreen();
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
+      navigator.serviceWorker.register('sw.js', { type: "module" }).then(() => {
         return navigator.serviceWorker.ready;
       }).then(() => {
-        console.log("sending", offscreen);
         navigator.serviceWorker.controller.postMessage({canvas: offscreen}, [offscreen]);
       })
     }
   </script>
+  <script type="module">
+    import { fetchWebPDecoder } from './webp-decoder.js';
+
+    async function loadImage(filename) {
+      const response = await fetch(filename);
+      const buffer = await response.arrayBuffer();
+
+      const WebPDecoder = await fetchWebPDecoder();
+      const decoder = new WebPDecoder(buffer);
+      const canvas = document.createElement('canvas');
+      const blob = await decoder.decodeToBlob(canvas);
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(blob);
+      document.body.appendChild(img);
+    }
+
+    loadImage('test4.webp');
+  </script>
 </head>
 
 <body>
+  <img src='test1.webp'></img>
   <img src='test2.webp'></img>
+  <img src='test3.webp'></img>
 </body>
 </html>
