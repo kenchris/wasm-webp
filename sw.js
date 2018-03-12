@@ -1,17 +1,3 @@
-
-let _resolver;
-const _canvasReady = new Promise(resolve => {
-  _resolver = resolve;
-});
-
-self.addEventListener('message', event => {
-  _resolver(event.data.canvas);
-});
-
-function getOfflineCanvas() {
-  return _canvasReady;
-}
-
 let _decoderReady = new Promise(async resolve => {
   // FIXME: Doesn't work in Chrome yet.
   // const moduleDecl = await import('webp-decoder.js');
@@ -37,10 +23,9 @@ self.addEventListener('fetch', async event => {
 
       const WebPDecoder = await fetchWebPDecoderWithWorkarounds();
       const decoder = new WebPDecoder(buffer);
-      const canvas = await getOfflineCanvas();
-      const blob = await decoder.decodeToBlob(canvas);
+      const blob = await decoder.decodeToBMP();
 
-      return new Response(blob, { "status": 200 });
+      return new Response(blob, { headers: { "content-type": "image/bmp", "status": 200 } });
     } catch(err) {
       console.error(err);
     }

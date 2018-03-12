@@ -10,6 +10,69 @@ function importClassicScript(url){
 
 self.Module = typeof self.Module !== "undefined" ? self.Module : {};
 
+class BMPImageEncoder {
+  static encode(imageData) {
+    const offset = 54;
+
+    const padding = imageData.width % 4;
+    const pixelArraySize = imageData.height * (3 * imageData.width + padding);
+    const bitsPerPixel = 24;
+    const sizeInBytes = pixelArraySize * (bitsPerPixel / 8) + offset;
+
+    let bmpBuffer = new DataView(new ArrayBuffer(sizeInBytes));
+
+    // Bitmap file header
+    bmpBuffer.setUint8(0, "B".charCodeAt(0));
+    bmpBuffer.setUint8(1, "M".charCodeAt(0));
+    bmpBuffer.setUint32(2, sizeInBytes, true);
+    bmpBuffer.setUint32(6, /* reserved */ 0, true);
+    bmpBuffer.setUint32(10, offset, true);
+
+    // DIB header (bitmap info header) - Here "Windows BITMAPINFOHEADER"
+    const headerSize = 40;
+    bmpBuffer.setUint32(14, headerSize, true);
+    bmpBuffer.setUint32(18, imageData.width, true);
+    bmpBuffer.setUint32(22, imageData.height, true);
+    bmpBuffer.setUint16(26, /* planes */ 1, true);
+    bmpBuffer.setUint16(28, bitsPerPixel, true);
+    bmpBuffer.setUint32(30, /* compression method: BI_RGB (none) */ 0, true);
+    bmpBuffer.setUint32(34, /* image size, dummy 0 for BI_RGB */ 0, true);
+    bmpBuffer.setUint32(38, /* horizontal resolution pixel per meter */ 0, true);
+    bmpBuffer.setUint32(42, /* vertical resolution pixel per meter */ 0, true);
+    bmpBuffer.setUint32(46, /* colors in color palette */ 0, true);
+    bmpBuffer.setUint32(50, /* important colors, generally ignored */ 0, true);
+
+    // Pixel array
+    const rowSize = Math.floor((24 * imageData.width + 31) / 32) * 4;
+
+    let i = 0;
+    for (let y = imageData.height - 1; y >= 0; y--) {
+      for (let x = 0; x < imageData.width; x++) {
+        let pos = offset + y * rowSize + x * 3;
+        bmpBuffer.setUint8(pos + 2, imageData.data[i++], true); // red
+        bmpBuffer.setUint8(pos + 1, imageData.data[i++], true); // green
+        bmpBuffer.setUint8(pos, imageData.data[i++], true); // blue
+        if (!imageData.rgb) { // Skip alpha
+          i++;
+        }
+      }
+
+      const fillOffset = offset + y * rowSize + imageData.width * 3;
+      switch(padding) {
+        case 3:
+          bmpBuffer.setUint8(fillOffset, 0, true);
+        case 2:
+          bmpBuffer.setUint8(fillOffset + 1, 0, true);
+        case 1:
+          bmpBuffer.setUint8(fillOffset + 2, 0, true);
+      }
+    }
+
+    return new Blob([bmpBuffer], { type : 'image/bmp' });
+  }
+}
+
+
 export async function fetchWebPDecoder() {
   const initRuntime = (async () => {
     const p = new Promise(resolve => {
@@ -70,11 +133,19 @@ export async function fetchWebPDecoder() {
       return result;
     }
 
+    decodeToBMP() {
+      let { width, height } = this.info();
+
+      const result = this.decode();
+      const img = new ImageData(result, width, height);
+
+      return BMPImageEncoder.encode(img);
+    }
+
     decodeToBlob(canvas) {
       let { width, height } = this.info();
 
       const result = this.decode();
-      console.log(result);
       const img = new ImageData(result, width, height);
 
       canvas.width = width;

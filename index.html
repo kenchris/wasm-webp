@@ -7,11 +7,7 @@
     const offscreen = canvas.transferControlToOffscreen();
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { type: "module" }).then(() => {
-        return navigator.serviceWorker.ready;
-      }).then(() => {
-        navigator.serviceWorker.controller.postMessage({canvas: offscreen}, [offscreen]);
-      })
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
   <script type="module">
@@ -23,8 +19,9 @@
 
       const WebPDecoder = await fetchWebPDecoder();
       const decoder = new WebPDecoder(buffer);
-      const canvas = document.createElement('canvas');
-      const blob = await decoder.decodeToBlob(canvas);
+
+      const data = await decoder.decodeToBMP();
+      var blob = new Blob([data], {type : 'image/bmp'});
 
       const img = document.createElement('img');
       img.src = URL.createObjectURL(blob);
