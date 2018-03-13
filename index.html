@@ -7,7 +7,17 @@
     const offscreen = canvas.transferControlToOffscreen();
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      void async function install() {
+        await navigator.serviceWorker.register('sw.js');
+        const registration = await navigator.serviceWorker.ready;
+        registration.active.onstatechange = (state) => {
+          for (const img of document.querySelectorAll('img')) {
+            if (img.src.endsWith('.webp')) {
+              img.src = img.src; // reload.
+            }
+          }
+        }
+      }();
     }
   </script>
   <script type="module">
