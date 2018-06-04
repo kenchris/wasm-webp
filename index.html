@@ -3,9 +3,6 @@
 <head>
   <title>WebP decoding</title>
   <script type="text/javascript">
-    const canvas = document.createElement('canvas');
-    const offscreen = canvas.transferControlToOffscreen();
-
     if ('serviceWorker' in navigator) {
       void async function install() {
         await navigator.serviceWorker.register('sw.js');
